@@ -12,6 +12,8 @@
 #include "util.h"
 
 #include <boost/foreach.hpp>
+#include <boost/assign/list_of.hpp>
+
 #include "json/json_spirit_value.h"
 
 using namespace json_spirit;
@@ -37,8 +39,7 @@ Value getconnectioncount(const Array& params, bool fHelp)
 Value ping(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
-        throw runtime_error(
-            "ping\n"
+        throw runtime_error("ping\n"
             "\nRequests that a ping be sent to all other nodes, to measure ping time.\n"
             "Results provided in getpeerinfo, pingtime and pingwait fields are decimal seconds.\n"
             "Ping command is handled in queue with all other commands, so it measures processing backlog, not just network ping.\n"
@@ -150,22 +151,25 @@ Value addnode(const Array& params, bool fHelp)
     if (fHelp || params.size() != 2 ||
         (strCommand != "onetry" && strCommand != "add" && strCommand != "remove"))
         throw runtime_error(
-            "addnode \"node\" \"add|remove|onetry\"\n"
+            "addnode \"node:port\" \"add|remove|onetry\"\n"
             "\nAttempts add or remove a node from the addnode list.\n"
             "Or try a connection to a node once.\n"
             "\nArguments:\n"
-            "1. \"node\"     (string, required) The node (see getpeerinfo for nodes)\n"
+            "1. \"node:port\"     (string, required) The node IP and port (see getpeerinfo for nodes)\n"
             "2. \"command\"  (string, required) 'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once\n"
 			"\nResult:\n"
         	"\nExamples:\n"
-            + HelpExampleCli("addnode", "\"192.168.0.6:8333\" \"onetry\"")
-            + HelpExampleRpc("addnode", "\"192.168.0.6:8333\", \"onetry\"")
+            + HelpExampleCli("addnode", "\"192.168.0.6:8333\" onetry")
+            + HelpExampleRpc("addnode", "\"192.168.0.6:8333\", onetry")
         );
 
-    string strNode = params[0].get_str();
+    RPCTypeCheck(params, boost::assign::list_of(str_type)(str_type));
 
-    if (strCommand == "onetry")
-    {
+    string strNode = params[0].get_str();
+    if (strNode.find("127.0.0.1:") != std::string::npos)
+        throw JSONRPCError(RPC_CLIENT_IS_LOCALHOST_ERROR, "Error: Node can't be a localhost.");
+
+    if (strCommand == "onetry") {
         CAddress addr;
         ConnectNode(addr, strNode.c_str());
         return Value::null;
@@ -177,16 +181,13 @@ Value addnode(const Array& params, bool fHelp)
         if (strNode == *it)
             break;
 
-    if (strCommand == "add")
-    {
+    if (strCommand == "add") {
         if (it != vAddedNodes.end())
             throw JSONRPCError(RPC_CLIENT_NODE_ALREADY_ADDED, "Error: Node already added");
         vAddedNodes.push_back(strNode);
-    }
-    else if(strCommand == "remove")
-    {
+    } else if(strCommand == "remove") {
         if (it == vAddedNodes.end())
-            throw JSONRPCError(RPC_CLIENT_NODE_NOT_ADDED, "Error: Node has not been added.");
+            throw JSONRPCError(RPC_CLIENT_NODE_NOT_ADDED, "Error: Node not added before.");
         vAddedNodes.erase(it);
     }
 
@@ -397,14 +398,13 @@ Value getchainstate(const Array& params, bool fHelp)
             "getchainstate \"num\"\n"
 			"\nget the chain state by the most recent blocks.\n"
             "\nArguments:\n"
-            "1.num   (numeric,required, > 0) The number of the recently blocks.\n"
+            "1.num   (numeric,required, > 0) The number of the most recent blocks.\n"
             "\nResult:\n"
             "{\n"
-            "  \"blocktime\": n,   (numeric)get the time of each block\n"
-            "  \"difficulty\": n,   (numeric)get the difficulty of each block\n"
-            "  \"transactions\": n, (numeric)get the transactions of each block\n"
-        	"  \"fuel\": n, (numeric)get fuel of each block\n"
-            "  \"blockminer\": n, (numeric)get the miner of each block\n"
+            "  \"blocktime\": n,   (numeric) the time of each block\n"
+            "  \"transactions\": n, (numeric) number of transactions within each block\n"
+        	"  \"fuel\": n, (numeric) fuel of each block\n"
+            "  \"miner\": n, (string) RegId of the miner of each block\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getchainstate", "\"5\"")
@@ -416,8 +416,7 @@ Value getchainstate(const Array& params, bool fHelp)
 		nHeight = params[0].get_int();
 		if(nHeight < 1)
 			throw runtime_error("Block number out of range.");
-	    if(nHeight > chainActive.Height())
-	    {   //防止超过最大高度
+	    if(nHeight > chainActive.Height()) {   //防止超过最大高度
 	    	nHeight = chainActive.Height();
 	    }
 	}
@@ -434,8 +433,7 @@ Value getchainstate(const Array& params, bool fHelp)
 		transactions.push_back((int)pBlockIndex->nTx);
 		fuel.push_back(pBlockIndex->nFuel);
 		block.SetNull();
-		if(ReadBlockFromDisk(block, pBlockIndex))
-		{
+		if (ReadBlockFromDisk(block, pBlockIndex)) {
 			string miner(boost::get<CRegID>(dynamic_pointer_cast<CRewardTransaction>(block.vptx[0])->account).ToString());
 			blockminer.push_back(move(miner));
 		}
@@ -445,6 +443,6 @@ Value getchainstate(const Array& params, bool fHelp)
 	obj.push_back(Pair("blocktime", blocktime));
 	obj.push_back(Pair("transactions", transactions));
 	obj.push_back(Pair("fuel", fuel));
-	obj.push_back(Pair("blockminer",blockminer));
+	obj.push_back(Pair("miner",blockminer));
     return obj;
 }

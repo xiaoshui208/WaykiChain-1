@@ -180,7 +180,7 @@ public:
 		CVmScript vmScript;
 		vmScript.Rom.insert(vmScript.Rom.end(), buffer, buffer + lSize);
 		string desp("this is description");
-		vmScript.ScriptExplain.assign(desp.begin(), desp.end());
+		vmScript.ScriptMemo.assign(desp.begin(), desp.end());
 		CDataStream ds(SER_DISK, CLIENT_VERSION);
 		ds << vmScript;
 
@@ -229,7 +229,7 @@ BOOST_FIXTURE_TEST_CASE(acct_process,CSystemTest)
 	vector<CAccountLog> vLog;
 	for (int i = 0; i < nTimeOutHeight; i++) {
 		//0:产生注册脚本交易
-		Value valueRes = RegisterAppTx(strAddr1,strFileName , nTimeOutHeight, nFee);
+		Value valueRes = RegisterContractTx(strAddr1,strFileName , nTimeOutHeight, nFee);
 		BOOST_CHECK(GetHashFromCreatedTx(valueRes,strTxHash));
 
 		//1:挖矿
@@ -308,4 +308,3 @@ BOOST_FIXTURE_TEST_CASE(acct_process,CSystemTest)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-

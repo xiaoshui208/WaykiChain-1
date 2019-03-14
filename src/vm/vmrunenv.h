@@ -20,7 +20,8 @@
 
 using namespace std;
 class CVmOperate;
-class CVmRunEvn {
+
+class CVmRunEnv {
 	/**
 	 * Run the script object
 	 */
@@ -49,11 +50,11 @@ class CVmRunEvn {
 	/**
 	 * vm before the app account state
 	 */
-	vector<shared_ptr<CAppUserAccout>> RawAppUserAccout;
+	vector<shared_ptr<CAppUserAccount>> RawAppUserAccout;
 	/**
 	 * vm operate the app account  state
 	 */
-	vector<shared_ptr<CAppUserAccout>> NewAppUserAccout;
+	vector<shared_ptr<CAppUserAccount>> NewAppUserAccout;
 	CScriptDBViewCache *m_ScriptDBTip;
 	CAccountViewCache *m_view;
 	vector<CVmOperate> m_output;   //保存操作结果
@@ -71,7 +72,7 @@ private:
 	 *  @param nheight: run the Environment the block's height
 	 * @return : check the the tx and account is Legal true is legal false is unlegal
 	 */
-	bool intial(shared_ptr<CBaseTransaction> & Tx, CAccountViewCache& view, int nheight);
+	bool Initialize(shared_ptr<CBaseTransaction> & Tx, CAccountViewCache& view, int nheight);
 	/**
 	 *@brief check aciton
 	 * @param listoperate: run the script return the code,check the code
@@ -106,12 +107,14 @@ private:
 //	bool IsSignatureAccount(CRegID account);
 	bool OpeatorAppAccount(const map<vector<unsigned char >,vector<CAppFundOperate> > opMap, CScriptDBViewCache& view);
 
-	std::shared_ptr<CAppUserAccout> GetAppAccount(shared_ptr<CAppUserAccout>& AppAccount);
+	std::shared_ptr<CAppUserAccount> GetAppAccount(shared_ptr<CAppUserAccount>& AppAccount);
+
+
 public:
 	/**
 	 * A constructor.
 	 */
-	CVmRunEvn();
+	CVmRunEnv();
 	/**
 	 *@brief get be operate the account
 	 * @return the variable RawAccont
@@ -122,9 +125,9 @@ public:
 	 * @return :the variable NewAccont
 	 */
 	vector<shared_ptr<CAccount> > &GetNewAccont();
-	vector<shared_ptr<CAppUserAccout>> &GetRawAppUserAccount();
+	vector<shared_ptr<CAppUserAccount>> &GetRawAppUserAccount();
+	vector<shared_ptr<CAppUserAccount>> &GetNewAppUserAccount();
 
-	vector<shared_ptr<CAppUserAccout>> &GetNewAppUserAccount();
 	/**
 	 * @brief  start to run the script
 	 * @param Tx: run the tx
@@ -134,8 +137,8 @@ public:
 	 * @return: tuple<bool,uint64_t,string>  bool represent the script run success
 	 * uint64_t if the script run sucess Run the script calls the money ,string represent run the failed's  Reason
 	 */
-	tuple<bool,uint64_t,string> run(shared_ptr<CBaseTransaction>& Tx, CAccountViewCache& view,CScriptDBViewCache& VmDB,
-			int nheight,uint64_t nBurnFactor, uint64_t &uRunStep);
+	tuple<bool,uint64_t,string> ExecuteContract(shared_ptr<CBaseTransaction>& Tx, CAccountViewCache& view, CScriptDBViewCache& VmDB,
+			int nheight, uint64_t nBurnFactor, uint64_t &uRunStep);
 	/**
 	 * @brief just for test
 	 * @return:
@@ -153,10 +156,11 @@ public:
 	void InsertOutAPPOperte(const vector<unsigned char>& userId,const CAppFundOperate &source);
 	shared_ptr<vector<CScriptDBOperLog> > GetDbLog();
 
-	bool GetAppUserAccout(const vector<unsigned char> &id,shared_ptr<CAppUserAccout> &sptrAcc);
+	bool GetAppUserAccount(const vector<unsigned char> &id, shared_ptr<CAppUserAccount> &sptrAcc);
 	bool CheckAppAcctOperate(CTransaction* tx);
 	void SetCheckAccount(bool bCheckAccount);
-	virtual ~CVmRunEvn();
+	virtual ~CVmRunEnv();
+
 };
 
 enum ACCOUNT_TYPE {
@@ -171,29 +175,32 @@ class CVmOperate{
 public:
 	unsigned char nacctype;      	//regid or base58addr
 	unsigned char accountid[34];	//!< accountid
-	unsigned char opeatortype;		//!OperType
-	unsigned int  outheight;		//!< the transacion Timeout height
+	unsigned char opType;		//!OperType
+	unsigned int  outHeight;		//!< the transacion Timeout height
 	unsigned char money[8];			//!<The transfer amount
+
 	IMPLEMENT_SERIALIZE
 	(
-			READWRITE(nacctype);
-			for(int i = 0;i < 34;i++)
+		READWRITE(nacctype);
+		for (int i = 0;i < 34;i++)
 			READWRITE(accountid[i]);
-			READWRITE(opeatortype);
-			READWRITE(outheight);
-			for(int i = 0;i < 8;i++)
+		READWRITE(opType);
+		READWRITE(outHeight);
+		for (int i = 0;i < 8;i++)
 			READWRITE(money[i]);
 	)
+
 	CVmOperate() {
 		nacctype = regid;
 		memset(accountid, 0, 34);
-		opeatortype = ADD_FREE;
-		outheight = 0;
+		opType = ADD_FREE;
+		outHeight = 0;
 		memset(money, 0, 8);
 	}
+
 	Object ToJson();
 
 };
 
-//extern CVmRunEvn *pVmRunEvn; //提供给lmylib.cpp库使用
+//extern CVmRunEnv *pVmRunEnv; //提供给lmylib.cpp库使用
 #endif /* SCRIPTCHECK_H_ */

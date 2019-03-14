@@ -56,7 +56,8 @@ string static EncodeDumpTime(int64_t nTime) {
 //    return ret.str();
 //}
 
-string DecodeDumpString(const string &str) {
+string DecodeDumpString(const string &str) 
+{
     stringstream ret;
     for (unsigned int pos = 0; pos < str.length(); pos++) {
         unsigned char c = str[pos];
@@ -70,25 +71,27 @@ string DecodeDumpString(const string &str) {
     return ret.str();
 }
 
-Value dropprivkey(const Array& params, bool fHelp){
-	if (fHelp || params.size() != 0)
-		throw runtime_error("dropprivkey \n"
-			    "\ndrop private key.\n"
-			    "\nResult:\n"
-			    "\nExamples:\n"
-			    + HelpExampleCli("dropprivkey", "")
-			    + HelpExampleRpc("dropprivkey", "")
+Value dropminerkeys(const Array& params, bool fHelp)
+{
+	if (fHelp || params.size() != 0) {
+		throw runtime_error("dropminerkeys \n"
+            "\ndrop all miner keys in a wallet for cool mining.\n"
+            "\nResult:\n"
+            "\nExamples:\n"
+            + HelpExampleCli("dropminerkeys", "")
+            + HelpExampleRpc("dropminerkeys", "")
 		);
+    }
 
 	EnsureWalletIsUnlocked();
 	if (!pwalletMain->IsReadyForCoolMiner(*pAccountViewTip)) {
-		throw runtime_error("there is no cool miner key  or miner key in on regist to blockchain\n");
+		throw runtime_error("there is no cool miner key or miner key is not registered yet");
 	}
 
 	pwalletMain->ClearAllCkeyForCoolMiner();
-	Object reply2;
-	reply2.push_back(Pair("info", "wallet is ready for cool miner"));
-	return reply2;
+	Object ret;
+	ret.push_back( Pair("info", "wallet is ready for cool mining.") );
+	return ret;
 }
 
 Value importprivkey(const Array& params, bool fHelp)
@@ -127,10 +130,12 @@ Value importprivkey(const Array& params, bool fHelp)
     CCoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strSecret);
 
-    if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
+    if (!fGood) 
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
 
     CKey key = vchSecret.GetKey();
-    if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
+    if (!key.IsValid()) 
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
 
     CPubKey pubkey = key.GetPubKey();
     {
@@ -141,25 +146,24 @@ Value importprivkey(const Array& params, bool fHelp)
 
     }
     Object reply2;
-    reply2.push_back(Pair("imorpt key address",pubkey.GetKeyID().ToAddress()));
+    reply2.push_back(Pair("imported_key_address",pubkey.GetKeyID().ToAddress()));
     return reply2;
 }
 
 Value importwallet(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "importwallet \"filename\"\n"
+        throw runtime_error("importwallet \"filename\"\n"
             "\nImports keys from a wallet dump file (see dumpwallet).\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The wallet file\n"
+            "1. \"filename\"    (string, required) The wallet file to be imported\n"
             "\nExamples:\n"
-            "\nDump the wallet\n"
-            + HelpExampleCli("dumpwallet", "\"test\"") +
+            "\nDump the wallet first\n"
+            + HelpExampleCli("dumpwallet", "\"target_dumpwallet_filepath\"") +
             "\nImport the wallet\n"
-            + HelpExampleCli("importwallet", "\"test\"") +
+            + HelpExampleCli("importwallet", "\"target_dumpwallet_filepath\"") +
             "\nImport using the json rpc call\n"
-            + HelpExampleRpc("importwallet", "\"test\"")
+            + HelpExampleRpc("importwallet", "\"target_dumpwallet_filepath\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -176,57 +180,52 @@ Value importwallet(const Array& params, bool fHelp)
 //  bool fGood = true;
 //  int64_t nFilesize = max((int64_t)1, (int64_t)file.tellg());
     file.seekg(0, file.beg);
-    int inmsizeport = 0;
+    int importedKeySize = 0;
     pwalletMain->ShowProgress(_("Importing..."), 0); // show progress dialog in GUI
-    if (file.good()){
+    if (file.good()) {
     	Value reply;
-    	json_spirit::read(file,reply);
+    	json_spirit::read(file, reply);
     	const Value & keyobj = find_value(reply.get_obj(),"key");
     	const Array & keyarry = keyobj.get_array();
-    	for(auto const &keyItem :keyarry)
-    	{
+    	for (auto const &keyItem :keyarry) {
     		CKeyCombi keyCombi;
     		const Value &obj = find_value(keyItem.get_obj(), "keyid");
     		if(obj.type() == null_type)
     			continue;
+                
     		string strKeyId = find_value(keyItem.get_obj(), "keyid").get_str();
     		CKeyID keyId(uint160(ParseHex(strKeyId)));
-    		keyCombi.UnSersailFromJson(keyItem.get_obj());
-    		if(!keyCombi.IsContainMainKey() && !keyCombi.IsContainMinerKey()) {
+    		keyCombi.UnSerializeFromJson(keyItem.get_obj());
+    		if(!keyCombi.HasMainKey() && !keyCombi.HasMinerKey())
     			continue;
-    		}
+
     		if(pwalletMain->AddKey(keyId, keyCombi))
-    			inmsizeport++;
+    			importedKeySize++;
     	}
     }
     file.close();
     pwalletMain->ShowProgress("", 100); // hide progress dialog in GUI
-
     pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
 
-
     Object reply2;
-    reply2.push_back(Pair("imorpt key size",inmsizeport));
+    reply2.push_back(Pair("imported_key_size", importedKeySize));
     return reply2;
-
-
 }
 
 Value dumpprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "dumpprivkey \"WICC address\"\n"
-            "\nReveals the private key corresponding to 'WICC address'.\n"
-            "Then the importprivkey can be used with this output\n"
+        throw runtime_error("dumpprivkey \"address\"\n"
+            "\nReturns the private key corresponding to the given WICC address.\n"
+            "Then the importprivkey can be used with this output in another wallet for migration purposes.\n"
             "\nArguments:\n"
-            "1. \"Coinaddress\"   (string, required) The Coin address for the private key\n"
+            "1. \"address\"   (string, required) WICC address\n"
             "\nResult:\n"
-            "\"key\"                (string) The private key\n"
+            "\"key\"                (string) The associated private key\n"
             "\nExamples:\n"
-            + HelpExampleCli("dumpprivkey", "\"myaddress\"")
-            + HelpExampleCli("importprivkey", "\"mykey\"")
-            + HelpExampleRpc("dumpprivkey", "\"myaddress\"")
+            + HelpExampleCli("dumpprivkey", "\"$myaddress\"")
+            + HelpExampleCli("importprivkey", "\"$myprivkey\"")
+            + HelpExampleRpc("dumpprivkey", "\"$myaddress\"")
         );
 
     EnsureWalletIsUnlocked();
@@ -237,38 +236,43 @@ Value dumpprivkey(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Coin address");
     CKeyID keyID;
     if (!address.GetKeyID(keyID))
-        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
+        throw JSONRPCError(RPC_TYPE_ERROR, "The address is not associated with any private key");
     CKey vchSecret;
     if (!pwalletMain->GetKey(keyID, vchSecret))
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
+
     CKey minerkey;
-#if 0 //modified by shane @2018/5/17 此处不能抛异常
-    if (!pwalletMain->GetKey(keyID, minerkey,true))
-           throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
-#else
-	pwalletMain->GetKey(keyID, minerkey,true);
-#endif
+	pwalletMain->GetKey(keyID, minerkey, true);
     Object reply;
     	reply.push_back(Pair("privkey", CCoinSecret(vchSecret).ToString()));
-    if(minerkey.IsValid() && minerkey.ToString() != vchSecret.ToString())
+
+    if (minerkey.IsValid() && minerkey.ToString() != vchSecret.ToString())
     	reply.push_back(Pair("minerkey", CCoinSecret(minerkey).ToString()));
     else
     	reply.push_back(Pair("minerkey", " "));
+
     return reply;
 }
 
 Value dumpwallet(const Array& params, bool fHelp) {
 	if (fHelp || params.size() != 1)
 		throw runtime_error("dumpwallet \"filename\"\n"
-				"\nDumps all wallet keys in a human-readable format.\n"
-				"\nArguments:\n"
-				"1. \"filename\"    (string, required) The filename\n"
-				"\nExamples:\n" + HelpExampleCli("dumpwallet", "\"test\"") + HelpExampleRpc("dumpwallet", "\"test\""));
+            "\nDumps all wallet keys in a human-readable format.\n"
+            "\nArguments:\n"
+            "1. \"filename\"    (string, required) The filename\n"
+            "\nExamples:\n"
+            + HelpExampleCli("dumpwallet", "$mywalletfilepath")
+            + HelpExampleRpc("dumpwallet", "$mywalletfilepath"));
 
 	EnsureWalletIsUnlocked();
 
-	ofstream file;
-	file.open(params[0].get_str().c_str());
+    string dumpFilePath = params[0].get_str().c_str();
+    if (dumpFilePath.find(GetDataDir().string()) != std::string::npos)
+        throw JSONRPCError(RPC_WALLET_FILEPATH_INVALID, 
+            "Wallet file shall not be saved into the Data dir to avoid likely file overwrite.");
+
+    ofstream file;
+	file.open(dumpFilePath);
 	if (!file.is_open())
 		throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
 
@@ -278,22 +282,21 @@ Value dumpwallet(const Array& params, bool fHelp) {
 	reply.push_back(Pair("Best block index hight ", chainActive.Height()));
 	reply.push_back(Pair("Best block hash ", chainActive.Tip()->GetBlockHash().ToString()));
 
-	set<CKeyID> setKeyId;
-	pwalletMain->GetKeys(setKeyId);
-	Array key;
-	for(auto & keyId : setKeyId)
-	{
+	set<CKeyID> setKeyIds;
+	pwalletMain->GetKeys(setKeyIds);
+	Array arrKeys;
+	for (auto & keyId : setKeyIds) {
 		CKeyCombi keyCombi;
 		pwalletMain->GetKeyCombi(keyId, keyCombi);
 		Object obj = keyCombi.ToJsonObj();
 		obj.push_back(Pair("keyid", keyId.ToString()));
-		key.push_back(obj);
+		arrKeys.push_back(obj);
 	}
-	reply.push_back(Pair("key",key));
+	reply.push_back(Pair("key", arrKeys));
 	file <<  write_string(Value(reply), true);
 	file.close();
 	Object reply2;
-	reply2.push_back(Pair("info","dump ok"));
-	reply2.push_back(Pair("key size",(int)setKeyId.size()));
+	reply2.push_back(Pair("info", "dump ok"));
+	reply2.push_back(Pair("key size", (int)setKeyIds.size()));
 	return reply2;
 }

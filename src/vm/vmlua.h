@@ -7,23 +7,19 @@
 #include <string>
 #include <memory>
 
-
-
 using namespace std;
-class CVmRunEvn;
-
-
-
+class CVmRunEnv;
 
 class CVmlua {
 public:
-	CVmlua(const vector<unsigned char> & vRom,const vector<unsigned char> &InputData);
+	CVmlua(const vector<unsigned char> &vContractScript, const vector<unsigned char> &vContractCallParams);
 	~CVmlua();
-	tuple<uint64_t,string> run(uint64_t maxstep,CVmRunEvn *pVmScriptRun);
-	static tuple<bool,string> syntaxcheck(const char* filePath);
+	tuple<uint64_t, string> run(uint64_t maxstep,CVmRunEnv *pVmRunEnv);
+	static tuple<bool, string> CheckScriptSyntax(const char* filePath);
+
 private:
-	unsigned char m_ExRam[65536];  //存放的是合约交易的contact内容
-	unsigned char m_ExeFile[65536];//可执行文件 IpboApp.lua
+	unsigned char m_ContractCallParams[4096];  		// to hold contract call params (contract)
+	unsigned char m_ContractScript[65536];			// to hold contract script content
 
 };
 

@@ -21,9 +21,11 @@ using namespace json_spirit;
 class CKeyCombi {
 private:
 	CPubKey mMainPKey;
-	CPubKey mMinerPKey;
-	CKey  mMainCkey;
-	CKey  mMinerCkey; //only used for miner
+	CKey  mMainCkey;  //if existing, used for saving tx fees
+
+    CPubKey mMinerPKey;
+	CKey  mMinerCkey; //only used for mining/block-creation
+    
 	int64_t nCreationTime;
 
 public:
@@ -34,15 +36,15 @@ public:
 	string ToString() const;
 
 	Object ToJsonObj()const;
-	bool UnSersailFromJson(const Object&);
+	bool UnSerializeFromJson(const Object&);
 	int64_t GetBirthDay()const;
-	bool GetCKey(CKey& keyOut,bool IsMine = false) const ;
+	bool GetCKey(CKey& keyOut,bool IsMiner = false) const ;
 	bool CreateANewKey();
-	bool GetPubKey(CPubKey &mOutKey,bool IsMine = false) const;
+	bool GetPubKey(CPubKey &mOutKey,bool IsMiner = false) const;
     bool CleanMainKey();
     bool CleanAll();
-	bool IsContainMinerKey()const;
-	bool IsContainMainKey()const;
+	bool HasMinerKey()const;
+	bool HasMainKey()const;
 	CKeyID GetCKeyID() const ;
 	void SetMainKey(CKey& mainKey);
 	void SetMinerKey(CKey & minerKey);
@@ -76,7 +78,7 @@ public:
 //    virtual bool AddKey(const CKey &key);
 
     // Check whether a key corresponding to a given address is present in the store.
-    virtual bool HaveKey(const CKeyID &address) const =0;
+    virtual bool HasKey(const CKeyID &address) const =0;
     virtual bool GetKey(const CKeyID &address, CKey& keyOut, bool IsMine) const =0;
     virtual void GetKeys(set<CKeyID> &setAddress, bool bFlag) const =0;
     virtual bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut, bool IsMine) const;
@@ -99,7 +101,7 @@ protected:
 
 public:
     bool AddKeyCombi(const CKeyID & keyId, const CKeyCombi &keyCombi);
-    bool HaveKey(const CKeyID &address) const
+    bool HasKey(const CKeyID &address) const
     {
         bool result;
         {
@@ -114,34 +116,37 @@ public:
         {
             LOCK(cs_KeyStore);
             KeyMap::const_iterator mi = mapKeys.begin();
-            while (mi != mapKeys.end())
-            {
+            while (mi != mapKeys.end()) {
             	if(!bFlag)   //return all address in wallet
             		setAddress.insert((*mi).first);
-            	else if(mi->second.IsContainMinerKey() || mi->second.IsContainMainKey())  //only return satisfied mining address
+            	else if (mi->second.HasMinerKey() || mi->second.HasMainKey())  //only return satisfied mining address
             		setAddress.insert((*mi).first);
+
                 mi++;
             }
         }
     }
+
     bool GetKey(const CKeyID &address, CKey &keyOut, bool IsMine=false) const
     {
         {
             LOCK(cs_KeyStore);
             KeyMap::const_iterator mi = mapKeys.find(address);
-            if (mi != mapKeys.end())
-            {
+            if (mi != mapKeys.end()) {
             	return mi->second.GetCKey(keyOut, IsMine);
             }
         }
         return false;
     }
+
     virtual bool GetKeyCombi(const CKeyID & address, CKeyCombi & keyCombiOut) const;
-    bool IsContainMainKey() {
+
+    bool HasMainKey() {
     	for(auto &item : mapKeys) {
-    		if(item.second.IsContainMainKey())
+    		if(item.second.HasMainKey())
     			return true;
     	}
+        
     	return false;
     }
 

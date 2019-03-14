@@ -81,8 +81,8 @@ bool PrintTestNotSetPara()
 bool AppInit(int argc, char* argv[],boost::thread_group &threadGroup) {
 	bool fRet = false;
 	try {
-		CBaseParams::IntialParams(argc, argv);
-		SysCfg().InitalConfig();
+		CBaseParams::InitializeParams(argc, argv);
+		SysCfg().InitialConfig();
 
 		PrintTestNotSetPara();
 
@@ -95,7 +95,7 @@ bool AppInit(int argc, char* argv[],boost::thread_group &threadGroup) {
 					+ "  waykicoind [options] help                " + _("List commands") + "\n"
 					+ "  waykicoind [options] help <command>      " + _("Get help for a command") + "\n";
 
-			strUsage += "\n" + HelpMessage(HMM_BITCOIND);
+			strUsage += "\n" + HelpMessage();
 			strUsage += "\n" + HelpMessageCli(false);
 
 			fprintf(stdout, "%s", strUsage.c_str());
@@ -115,7 +115,7 @@ bool AppInit(int argc, char* argv[],boost::thread_group &threadGroup) {
 
 		SysCfg().SoftSetBoolArg("-server", true);
 
-		fRet = AppInit2(threadGroup);
+		fRet = AppInit(threadGroup);
 	} catch (std::exception& e) {
 		PrintExceptionContinue(&e, "AppInit()");
 	} catch (...) {
@@ -240,7 +240,7 @@ Value SysTestBase::CreateRegAppTx(const string& strAddress, const string& strScr
 	string strFee = strprintf("%d",nFee);
 	string strHeight = strprintf("%d",nHeight);
 
-	const char *argv[] = { "rpctest", "registerapptx", (char*) strAddress.c_str(), (char*) filepath.c_str(), (char*) strFee.c_str(),(char*) strHeight.c_str(),"this is description"};
+	const char *argv[] = { "rpctest", "registercontracttx", (char*) strAddress.c_str(), (char*) filepath.c_str(), (char*) strFee.c_str(),(char*) strHeight.c_str(),"this is description"};
 	int argc = sizeof(argv) / sizeof(char*);
 
 	Value value;
@@ -262,14 +262,14 @@ Value SysTestBase::GetAccountInfo(const string& strID) {
 	return value;
 }
 
-Value SysTestBase::GetAppAccountInfo(const string& scriptId,const string& strAddr)
+Value SysTestBase::GetContractAccountInfo(const string& scriptId,const string& strAddr)
 {
-	const char *argv[] = { "rpctest", "getappaccountinfo", (char*) scriptId.c_str(), (char*) strAddr.c_str()};
+	const char *argv[] = { "rpctest", "getcontractaccountinfo", (char*) scriptId.c_str(), (char*) strAddr.c_str()};
 	int argc = sizeof(argv) / sizeof(char*);
 
 	Value value;
 	if (CommandLineRPC_GetValue(argc, argv, value)) {
-		LogPrint("test_miners", "GetAppAccountInfo:%s\r\n", write_string(value, true));
+		LogPrint("test_miners", "GetContractAccountInfo:%s\r\n", write_string(value, true));
 		return value;
 	}
 	return value;
@@ -364,7 +364,7 @@ bool SysTestBase::GetNewAddr(std::string &addr,bool flag) {
 	{
 		param = "true";
 	}
-	const char *argv[] = { "rpctest", "getnewaddress",param.c_str()};
+	const char *argv[] = { "rpctest", "getnewaddr", param.c_str()};
 	int argc = sizeof(argv) / sizeof(char*);
 
 	Value value;
@@ -466,7 +466,7 @@ Value SysTestBase::RegisterAccountTx(const std::string &addr, const int nfee) {
 	return value;
 }
 
-Value SysTestBase::CreateContractTx(const std::string &scriptid, const std::string &addrs, const std::string &contract,
+Value SysTestBase::CallContractTx(const std::string &scriptid, const std::string &addrs, const std::string &contract,
 		int nHeight,int nFee,uint64_t nMoney ) {
 
 	if (0 == nFee) {
@@ -482,7 +482,7 @@ Value SysTestBase::CreateContractTx(const std::string &scriptid, const std::stri
 
 	string pmoney = strprintf("%ld", nMoney);
 
-	const char *argv[] = { "rpctest", "createcontracttx",(char *) (addrs.c_str()), (char *) (scriptid.c_str()), (char *)pmoney.c_str(),
+	const char *argv[] = { "rpctest", "callcontracttx",(char *) (addrs.c_str()), (char *) (scriptid.c_str()), (char *)pmoney.c_str(),
 			(char *) (contract.c_str()), (char*)strFee.c_str(), (char*)height.c_str() };
 	int argc = sizeof(argv) / sizeof(char*);
 
@@ -493,7 +493,7 @@ Value SysTestBase::CreateContractTx(const std::string &scriptid, const std::stri
 	return value;
 }
 
-Value SysTestBase::RegisterAppTx(const string& strAddress, const string& strScript, int nHeight, int nFee) {
+Value SysTestBase::RegisterContractTx(const string& strAddress, const string& strScript, int nHeight, int nFee) {
 	return CreateRegAppTx(strAddress, strScript, true, nFee, nHeight);
 }
 
@@ -739,8 +739,7 @@ bool SysTestBase::GetRegID(string& strAddr,CRegID& regID) {
 	if (!accView.GetAccount(userId, account)) {
 		return false;
 	}
-	if((!account.IsRegister())||account.regID.IsEmpty())
-	{
+	if ((!account.IsRegistered()) || account.regID.IsEmpty()) {
 		return false;
 	}
 
@@ -756,7 +755,7 @@ bool SysTestBase::GetTxOperateLog(const uint256& txHash, vector<CAccountLog>& vL
 	}
 
 bool SysTestBase::PrintLog(){
-	const char *argv2[] = { "rpctest", "printblokdbinfo"};
+	const char *argv2[] = { "rpctest", "printblockdbinfo"};
 
 		Value value;
 		if (!CommandLineRPC_GetValue(sizeof(argv2) / sizeof(argv2[0]), argv2, value)) {

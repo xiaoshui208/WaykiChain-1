@@ -301,7 +301,7 @@ bool IsReachable(const CNetAddr& addr)
 
 bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const char* pszKeyword, CNetAddr& ipRet)
 {
-	LogPrint("GETMYIP", "GetMyExternalIP2 addrConnect:%s \n", addrConnect.ToString());
+    LogPrint("GETMYIP", "GetMyExternalIP2 addrConnect:%s \n", addrConnect.ToString());
     SOCKET hSocket;
     if (!ConnectSocket(addrConnect, hSocket))
         return ERRORMSG("GetMyExternalIP() : connection to %s failed", addrConnect.ToString());
@@ -361,21 +361,21 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 //    const char* pszGet;
     const char* pszKeyword;
     for (int nLookup = 0; nLookup <= 1; nLookup++)
-    for (int nHost = 1; nHost <= 2; nHost++)
+    for (int nHost = 1; nHost <= 1; nHost++)
     {
         // We should be phasing out our use of sites like these. If we need
         // replacements, we should ask for volunteers to put this simple
         // php file on their web server that prints the client IP:
         //  <?php echo $_SERVER["REMOTE_ADDR"]; ?>
 
-    	if (nHost == 1)
+        if (nHost == 1)
         {
             addrConnect = CService("91.198.22.70", 80); // checkip.dyndns.org blocked in CN though
             strszGet = string("GET / HTTP/1.1\r\n"
-            					 "Host: 91.198.22.70\r\n"
-            					 "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)\r\n"
-            					 "Connection: close\r\n"
-            					 "\r\n");
+                                 "Host: 91.198.22.70\r\n"
+                                 "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)\r\n"
+                                 "Connection: close\r\n"
+                                 "\r\n");
             if (nLookup == 1) //2nd-time lookup
             {
                 CService addrIP("checkip.dyndns.org", 80, true);
@@ -384,23 +384,6 @@ bool GetMyExternalIP(CNetAddr& ipRet)
                 strszGet.replace(strszGet.find("91.198.22.70"), sizeof("91.198.22.70"), "checkip.dyndns.org");
             }
             pszKeyword = "Address:";
-        } else if (nHost == 2) {
-            addrConnect = CService("216.146.43.71", 80); // www.showmyip.com blocked in CN though
-
-            strszGet = string("GET /simple/ HTTP/1.1\r\n"
-                     	 "Host: 216.146.43.71\r\n"
-                     	 "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)\r\n"
-                     	 "Connection: close\r\n"
-                     	 "\r\n");
-
-            if (nLookup == 1) //2nd-time lookup
-            {
-                CService addrIP("www.showmyip.com", 80, true);
-                if (addrIP.IsValid())
-                    addrConnect = addrIP;
-                strszGet.replace(strszGet.find("216.146.43.71"), sizeof("216.146.43.71"), "www.showmyip.com");
-            }
-            pszKeyword = NULL; // Returns just IP address
         }
 
         if (GetMyExternalIP2(addrConnect, strszGet.c_str(), pszKeyword, ipRet))
@@ -441,9 +424,9 @@ CCriticalSection CNode::cs_totalBytesSent;
 CNode* FindNode(const CNetAddr& ip)
 {
     LOCK(cs_vNodes);
-	for (auto pnode : vNodes)
-		if ((CNetAddr) pnode->addr == ip)
-			return (pnode);
+    for (auto pnode : vNodes)
+        if ((CNetAddr) pnode->addr == ip)
+            return (pnode);
     return NULL;
 }
 
@@ -551,11 +534,11 @@ void CNode::PushVersion()
 {
     int nBestHeight = g_signals.GetHeight().get_value_or(0);
 
-	#ifdef WIN32
-    	string os("windows");
-	#else
-    	string os("linux");
-	#endif
+    #ifdef WIN32
+        string os("windows");
+    #else
+        string os("linux");
+    #endif
     vector<string> comments;
     comments.push_back(os);
     /// when NTP implemented, change to just nTime = GetAdjustedTime()
@@ -563,7 +546,9 @@ void CNode::PushVersion()
     CAddress addrYou = (addr.IsRoutable() && !IsProxy(addr) ? addr : CAddress(CService("0.0.0.0",0)));
     CAddress addrMe = GetLocalAddress(&addr);
     RAND_bytes((unsigned char*)&nLocalHostNonce, sizeof(nLocalHostNonce));
-    LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), addrYou.ToString(), addr.ToString());
+    LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", 
+        PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), addrYou.ToString(), addr.ToString());
+        
     PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
                 nLocalHostNonce, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, comments), nBestHeight, true);
 }
@@ -857,11 +842,11 @@ void ThreadSocketHandler()
         SOCKET hSocketMax = 0;
         bool have_fds = false;
 
-		for (auto hListenSocket : vhListenSocket) {
-			FD_SET(hListenSocket, &fdsetRecv);
-			hSocketMax = max(hSocketMax, hListenSocket);
-			have_fds = true;
-		}
+        for (auto hListenSocket : vhListenSocket) {
+            FD_SET(hListenSocket, &fdsetRecv);
+            hSocketMax = max(hSocketMax, hListenSocket);
+            have_fds = true;
+        }
         {
             LOCK(cs_vNodes);
             for (auto pnode : vNodes)
@@ -1073,8 +1058,6 @@ void ThreadSocketHandler()
             for (auto pnode : vNodesCopy)
                 pnode->Release();
         }
-
-        MilliSleep(10);
     }
 }
 
@@ -1104,7 +1087,7 @@ void ThreadMapPort()
 #ifdef MAC_OSX
     devlist = upnpDiscover(2000, multicastif, minissdpdpath, 0, 0, 0, &error);
 #else
-	devlist = upnpDiscover(2000, multicastif, minissdpdpath, 0, 0, &error);
+    devlist = upnpDiscover(2000, multicastif, minissdpdpath, 0, 0, &error);
 #endif
 #endif
 
@@ -1206,6 +1189,18 @@ void MapPort(bool)
 
 void ThreadDNSAddressSeed()
 {
+    // goal: only query DNS seeds if address need is acute
+    if ((addrman.size() > 0) &&
+        (!SysCfg().GetBoolArg("-forcednsseed", false))) {
+        MilliSleep(11 * 1000);
+
+        LOCK(cs_vNodes);
+        if (vNodes.size() >= 2) {
+            LogPrint("INFO", "P2P peers available. Skipped DNS seeding.\n");
+            return;
+        }
+    }
+
     const vector<CDNSSeedData> &vSeeds = SysCfg().DNSSeeds();
     int found = 0;
 

@@ -45,6 +45,7 @@ enum RPCErrorCode
     RPC_MISC_ERROR                  = -1,  // exception thrown in command handling
     RPC_FORBIDDEN_BY_SAFE_MODE      = -2,  // Server is in safe mode, and command is not allowed in safe mode
     RPC_TYPE_ERROR                  = -3,  // Unexpected type was passed as parameter
+    RPC_INSUFFICIENT_FEE            = -4,  // Fee less than Default Transaction Fee (E.g. 10000)
     RPC_INVALID_ADDRESS_OR_KEY      = -5,  // Invalid address or key
     RPC_OUT_OF_MEMORY               = -7,  // Ran out of memory during operation
     RPC_INVALID_PARAMETER           = -8,  // Invalid, missing or duplicate parameter
@@ -59,10 +60,12 @@ enum RPCErrorCode
     RPC_CLIENT_IN_INITIAL_DOWNLOAD  = -10, // Still downloading initial blocks
     RPC_CLIENT_NODE_ALREADY_ADDED   = -23, // Node is already added
     RPC_CLIENT_NODE_NOT_ADDED       = -24, // Node has not been added before
+    RPC_CLIENT_IS_LOCALHOST_ERROR   = -25, // Node can't be a local host one
 
     // Wallet errors
     RPC_WALLET_ERROR                = -4,  // Unspecified problem with wallet (key not found etc.)
     RPC_WALLET_INSUFFICIENT_FUNDS   = -6,  // Not enough funds in wallet or account
+    RPC_WALLET_FILEPATH_INVALID     = -7,  // wallet dump or import file path error
     RPC_WALLET_INVALID_ACCOUNT_NAME = -11, // Invalid account name
     RPC_WALLET_KEYPOOL_RAN_OUT      = -12, // Keypool ran out, call keypoolrefill first
     RPC_WALLET_UNLOCK_NEEDED        = -13, // Enter the wallet passphrase with walletpassphrase first
@@ -70,6 +73,9 @@ enum RPCErrorCode
     RPC_WALLET_WRONG_ENC_STATE      = -15, // Command given in wrong wallet encryption state (encrypting an encrypted wallet etc.)
     RPC_WALLET_ENCRYPTION_FAILED    = -16, // Failed to encrypt the wallet
     RPC_WALLET_ALREADY_UNLOCKED     = -17, // Wallet is already unlocked
+
+    RPC_SCRIPT_FILEPATH_INVALID     = -18, // Register contract script file not inside /tmp/lua dir
+    RPC_SCRIPT_FILEPATH_NOT_EXIST   = -19, // Register contract script file not exist
 };
 
 //

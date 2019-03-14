@@ -34,11 +34,11 @@
 #include <miniupnpc/upnperrors.h>
 
 #ifndef MINIUPNPC_VERSION
-#define MINIUPNPC_VERSION	"1.9"
+#define MINIUPNPC_VERSION   "1.9"
 #endif
 
 #ifndef MINIUPNPC_API_VERSION
-#define MINIUPNPC_API_VERSION	10
+#define MINIUPNPC_API_VERSION   10
 #endif
 
 #endif
@@ -104,7 +104,7 @@ enum BindFlags {
 // threads that should only be stopped after the main network-processing
 // threads have exited.
 //
-// Note that if running -daemon the parent process returns from AppInit2
+// Note that if running -daemon the parent process returns from AppInit
 // before adding any threads to the threadGroup, so .join_all() returns
 // immediately and the parent exits from main().
 //
@@ -143,25 +143,26 @@ void Shutdown()
 
     StopNode();
     UnregisterNodeSignals(GetNodeSignals());
+
     {
         LOCK(cs_main);
 
         if (pwalletMain) {
             pwalletMain->SetBestChain(chainActive.GetLocator());
-        	bitdb.Flush(true);
+            bitdb.Flush(true);
         }
 
         if (pblocktree)
             pblocktree->Flush();
 
         if(pAccountViewTip)
-        	pAccountViewTip->Flush();
+            pAccountViewTip->Flush();
 
         if(pTxCacheTip)
-        	pTxCacheTip->Flush();
+            pTxCacheTip->Flush();
 
         if(pScriptDBTip)
-        	pScriptDBTip->Flush();
+            pScriptDBTip->Flush();
         delete pAccountViewTip; pAccountViewTip = NULL;
         delete pAccountViewDB; pAccountViewDB = NULL;
         delete pblocktree; pblocktree = NULL;
@@ -169,7 +170,6 @@ void Shutdown()
         delete pScriptDB; pScriptDB = NULL;
         delete pTxCacheTip; pTxCacheTip = NULL;
         delete pScriptDBTip; pScriptDBTip = NULL;
-
     }
 
     boost::filesystem::remove(GetPidFile());
@@ -220,24 +220,19 @@ bool static Bind(const CService &addr, unsigned int flags) {
 }
 
 // Core-specific options shared between UI, daemon and RPC client
-string HelpMessage(HelpMessageMode hmm)
-{
+string HelpMessage() {
     string strUsage = _("Options:") + "\n";
     strUsage += "  -?                     " + _("This help message") + "\n";
     strUsage += "  -alertnotify=<cmd>     " + _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)") + "\n";
     strUsage += "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n";
     strUsage += "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 288, 0 = all)") + "\n";
     strUsage += "  -checklevel=<n>        " + _("How thorough the block verification of -checkblocks is (0-4, default: 3)") + "\n";
-    strUsage += "  -conf=<file>           " + _("Specify configuration file (default: ")+IniCfg().GetCoinName()+".conf)" + "\n";
-    if (hmm == HMM_BITCOIND)
-    {
+    strUsage += "  -conf=<file>           " + _("Specify configuration file (default: ") + IniCfg().GetCoinName()+".conf)" + "\n";
 #if !defined(WIN32)
-        strUsage += "  -daemon                " + _("Run in the background as a daemon and accept commands") + "\n";
+    strUsage += "  -daemon                " + _("Run in the background as a daemon and accept commands") + "\n";
 #endif
-    }
     strUsage += "  -datadir=<dir>         " + _("Specify data directory") + "\n";
     strUsage += "  -dbcache=<n>           " + strprintf(_("Set database cache size in megabytes (%d to %d, default: %d)"), nMinDbCache, nMaxDbCache, nDefaultDbCache) + "\n";
-    strUsage += "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n";
     strUsage += "  -loadblock=<file>      " + _("Imports blocks from external blk000??.dat file") + " " + _("on startup") + "\n";
     strUsage += "  -par=<n>               " + strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"), -(int)boost::thread::hardware_concurrency(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS) + "\n";
     strUsage += "  -pid=<file>            " + _("Specify pid file (default: coin.pid)") + "\n";
@@ -252,7 +247,8 @@ string HelpMessage(HelpMessageMode hmm)
     strUsage += "  -connect=<ip>          " + _("Connect only to the specified node(s)") + "\n";
     strUsage += "  -discover              " + _("Discover own IP address (default: 1 when listening and no -externalip)") + "\n";
     strUsage += "  -dns                   " + _("Allow DNS lookups for -addnode, -seednode and -connect") + " " + _("(default: 1)") + "\n";
-    strUsage += "  -dnsseed               " + _("Find peers using DNS lookup (default: 1 unless -connect)") + "\n";
+    strUsage += "  -dnsseed               " + _("Query for peer addresses via DNS lookup, if low on addresses (default: 1 unless -connect)") + "\n";
+    strUsage += "  -forcednsseed          " + _("Always query for peer addresses via DNS lookup (default: 0)") + "\n";
     strUsage += "  -externalip=<ip>       " + _("Specify your own public address") + "\n";
     strUsage += "  -listen                " + _("Accept connections from outside (default: 1 if no -proxy or -connect)") + "\n";
     strUsage += "  -maxconnections=<n>    " + _("Maintain at most <n> connections to peers (default: 125)") + "\n";
@@ -276,6 +272,7 @@ string HelpMessage(HelpMessageMode hmm)
 #ifdef ENABLE_WALLET
     strUsage += "\n" + _("Wallet options:") + "\n";
     strUsage += "  -disablewallet         " + _("Do not load the wallet and disable wallet RPC calls") + "\n";
+    strUsage += "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n";
     strUsage += "  -paytxfee=<amt>        " + _("Fee per kB to add to transactions you send") + "\n";
     strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + " " + _("on startup") + "\n";
     strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + " " + _("on startup") + "\n";
@@ -287,8 +284,7 @@ string HelpMessage(HelpMessageMode hmm)
 #endif
 
     strUsage += "\n" + _("Debugging/Testing options:") + "\n";
-    if (SysCfg().GetBoolArg("-help-debug", false))
-    {
+    if (SysCfg().GetBoolArg("-help-debug", false)) {
         strUsage += "  -benchmark             " + _("Show benchmark information (default: 0)") + "\n";
         strUsage += "  -checkpoints           " + _("Only accept block chain matching built-in checkpoints (default: 1)") + "\n";
         strUsage += "  -dblogsize=<n>         " + _("Flush database activity from memory pool to disk log every <n> megabytes (default: 100)") + "\n";
@@ -301,24 +297,21 @@ string HelpMessage(HelpMessageMode hmm)
     strUsage += "  -debug=<category>      " + _("Output debugging information (default: 0, supplying <category> is optional)") + "\n";
     strUsage += "                         " + _("If <category> is not supplied, output all debugging information.") + "\n";
     strUsage += "                         " + _("<category> can be:");
-    strUsage +=                                 " addrman, alert, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
-    if (hmm == HMM_BITCOIN_QT)
-        strUsage += ", qt";
-    strUsage += ".\n";
-    strUsage += "  -gen                   " + _("Generate coins (default: 0)") + "\n";
+    strUsage +=                                 " addrman, alert, coindb, db, lock, rand, rpc, selectcoins, mempool, net";
+#ifdef ENABLE_WALLET
+    strUsage += "  -genblock              " + _("Generate blocks (default: 0)") + "\n";
     strUsage += "  -genproclimit=<n>      " + _("Set the processor limit for when generation is on (-1 = unlimited, default: -1)") + "\n";
+#endif
     strUsage += "  -help-debug            " + _("Show all debugging options (usage: --help -help-debug)") + "\n";
     strUsage += "  -logtimestamps         " + _("Prepend debug output with timestamp (default: 1)") + "\n";
-    if (SysCfg().GetBoolArg("-help-debug", false))
-    {
+    if (SysCfg().GetBoolArg("-help-debug", false)) {
         strUsage += "  -limitfreerelay=<n>    " + _("Continuously rate-limit free transactions to <n>*1000 bytes per minute (default:15)") + "\n";
         strUsage += "  -maxsigcachesize=<n>   " + _("Limit size of signature cache to <n> entries (default: 50000)") + "\n";
     }
     strUsage += "  -mintxfee=<amt>        " + _("Fees smaller than this are considered zero fee (for transaction creation) (default:") + " " + FormatMoney(CTransaction::nMinTxFee) + ")" + "\n";
     strUsage += "  -minrelaytxfee=<amt>   " + _("Fees smaller than this are considered zero fee (for relaying) (default:") + " " + FormatMoney(CTransaction::nMinRelayTxFee) + ")" + "\n";
     strUsage += "  -logprinttoconsole     " + _("Send trace/debug info to console instead of debug.log file") + "\n";
-    if (SysCfg().GetBoolArg("-help-debug", false))
-    {
+    if (SysCfg().GetBoolArg("-help-debug", false)) {
         strUsage += "  -printblock=<hash>     " + _("Print block on startup, if found in block index") + "\n";
         strUsage += "  -printblocktree        " + _("Print block tree on startup (default: 0)") + "\n";
         strUsage += "  -printpriority         " + _("Log transaction priority and fee per kB when mining blocks (default: 0)") + "\n";
@@ -360,8 +353,8 @@ struct CImportingNow
     }
 
     ~CImportingNow() {
-    	assert(SysCfg().IsImporting() == true);
-    	SysCfg().SetImporting(false);
+        assert(SysCfg().IsImporting() == true);
+        SysCfg().SetImporting(false);
     }
 };
 
@@ -378,13 +371,14 @@ void ThreadImport(vector<boost::filesystem::path> vImportFiles)
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
                 break;
-            LogPrint("INFO","Reindexing block file blk%05u.dat...\n", (unsigned int)nFile);
+
+            LogPrint("INFO", "Reindexing block file blk%05u.dat...\n", (unsigned int)nFile);
             LoadExternalBlockFile(file, &pos);
             nFile++;
         }
         pblocktree->WriteReindexing(false);
         SysCfg().SetReIndex(false);
-        LogPrint("INFO","Reindexing finished\n");
+        LogPrint("INFO", "Reindexing finished\n");
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
         InitBlockIndex();
     }
@@ -400,28 +394,28 @@ void ThreadImport(vector<boost::filesystem::path> vImportFiles)
             LoadExternalBlockFile(file);
             RenameOver(pathBootstrap, pathBootstrapOld);
         } else {
-            LogPrint("INFO","Warning: Could not open bootstrap file %s\n", pathBootstrap.string());
+            LogPrint("INFO", "Warning: Could not open bootstrap file %s\n", pathBootstrap.string());
         }
     }
 
     // -loadblock=
-	for (const auto &path : vImportFiles) {
-		FILE *file = fopen(path.string().c_str(), "rb");
-		if (file) {
-			CImportingNow imp;
-			LogPrint("INFO", "Importing blocks file %s...\n", path.string());
-			LoadExternalBlockFile(file);
-		} else {
-			LogPrint("INFO", "Warning: Could not open blocks file %s\n", path.string());
-		}
-	}
+    for (const auto &path : vImportFiles) {
+        FILE *file = fopen(path.string().c_str(), "rb");
+        if (file) {
+            CImportingNow imp;
+            LogPrint("INFO", "Importing blocks file %s...\n", path.string());
+            LoadExternalBlockFile(file);
+        } else {
+            LogPrint("INFO", "Warning: Could not open blocks file %s\n", path.string());
+        }
+    }
 }
 
 
 /** Initialize Coin.
  *  @pre Parameters should be parsed and config file should be read.
  */
-bool AppInit2(boost::thread_group& threadGroup)
+bool AppInit(boost::thread_group& threadGroup)
 {
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
@@ -450,9 +444,8 @@ bool AppInit2(boost::thread_group& threadGroup)
     WSADATA wsadata;
     int ret = WSAStartup(MAKEWORD(2,2), &wsadata);
     if (ret != NO_ERROR || LOBYTE(wsadata.wVersion ) != 2 || HIBYTE(wsadata.wVersion) != 2)
-    {
         return InitError(strprintf("Error: Winsock library failed to start (WSAStartup returned error %d)", ret));
-    }
+
 #endif
 #ifndef WIN32
     umask(077);
@@ -480,105 +473,78 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     CUIServer::StartServer();
 
-    if(SysCfg().GetBoolArg("-ui", false)) {
-    	threadGroup.create_thread(ThreadSendMessageToUI);
-    }
+    if(SysCfg().GetBoolArg("-ui", false))
+        threadGroup.create_thread(ThreadSendMessageToUI);
+
     // ********************************************************* Step 2: parameter interactions
 
     if (SysCfg().IsArgCount("-bind")) {
         // when specifying an explicit binding address, you want to listen on it
         // even when -connect or -proxy is specified
         if (SysCfg().SoftSetBoolArg("-listen", true))
-            LogPrint("INFO","AppInit2 : parameter interaction: -bind set -> setting -listen=1\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -bind set -> setting -listen=1\n");
     }
 
     if (SysCfg().IsArgCount("-connect") && SysCfg().GetMultiArgs("-connect").size() > 0) {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (SysCfg().SoftSetBoolArg("-dnsseed", false))
-            LogPrint("INFO","AppInit2 : parameter interaction: -connect set -> setting -dnsseed=0\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -connect set -> setting -dnsseed=0\n");
+
         if (SysCfg().SoftSetBoolArg("-listen", false))
-            LogPrint("INFO","AppInit2 : parameter interaction: -connect set -> setting -listen=0\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -connect set -> setting -listen=0\n");
     }
 
     if (SysCfg().IsArgCount("-proxy")) {
         // to protect privacy, do not listen by default if a default proxy server is specified
         if (SysCfg().SoftSetBoolArg("-listen", false))
-            LogPrint("INFO","AppInit2 : parameter interaction: -proxy set -> setting -listen=0\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -proxy set -> setting -listen=0\n");
     }
 
     if (!SysCfg().GetBoolArg("-listen", true)) {
         // do not map ports or try to retrieve public IP when not listening (pointless)
         if (SysCfg().SoftSetBoolArg("-upnp", false))
-            LogPrint("INFO","AppInit2 : parameter interaction: -listen=0 -> setting -upnp=0\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -listen=0 -> setting -upnp=0\n");
+
         if (SysCfg().SoftSetBoolArg("-discover", false))
-            LogPrint("INFO","AppInit2 : parameter interaction: -listen=0 -> setting -discover=0\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -listen=0 -> setting -discover=0\n");
     }
 
     if (SysCfg().IsArgCount("-externalip")) {
         // if an explicit public IP is specified, do not try to find others
         if (SysCfg().SoftSetBoolArg("-discover", false))
-            LogPrint("INFO","AppInit2 : parameter interaction: -externalip set -> setting -discover=0\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -externalip set -> setting -discover=0\n");
     }
 
     if (SysCfg().GetBoolArg("-salvagewallet", false)) {
         // Rewrite just private keys: rescan to find transactions
         if (SysCfg().SoftSetBoolArg("-rescan", true))
-            LogPrint("INFO","AppInit2 : parameter interaction: -salvagewallet=1 -> setting -rescan=1\n");
+            LogPrint("INFO", "AppInit : parameter interaction: -salvagewallet=1 -> setting -rescan=1\n");
     }
 
     // -zapwallettx implies a rescan
     if (SysCfg().GetBoolArg("-zapwallettxes", false)) {
-        if (SysCfg().SoftSetBoolArg("-rescan", true))
-            LogPrint("INFO","AppInit2 : parameter interaction: -zapwallettxes=1 -> setting -rescan=1\n");
+        if (SysCfg().SoftSetBoolArg("-rescan", true)) {
+            LogPrint("INFO", "AppInit : parameter interaction: -zapwallettxes=1 -> setting -rescan=1\n");
+        }
     }
 
     // Make sure enough file descriptors are available
-    int nBind = max((int)SysCfg().IsArgCount("-bind"), 1);
+    int nBind = max((int) SysCfg().IsArgCount("-bind"), 1);
     nMaxConnections = SysCfg().GetArg("-maxconnections", 125);
     nMaxConnections = max(min(nMaxConnections, (int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS)), 0);
     int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS);
     if (nFD < MIN_CORE_FILEDESCRIPTORS)
         return InitError(_("Not enough file descriptors available."));
+
     if (nFD - MIN_CORE_FILEDESCRIPTORS < nMaxConnections)
-		nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
+        nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
 
     // ********************************************************* Step 3: parameter-to-internal-flags
-
-//	fDebug = !mapMultiArgs["-debug"].empty();
-//    // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
-//    const vector<string>& categories = mapMultiArgs["-debug"];
-//    if (GetBoolArg("-nodebug", false) || find(categories.begin(), categories.end(), string("0")) != categories.end())
-//        fDebug = false;
-
-    // Check for -debugnet (deprecated)
-//    if (SysCfg().GetBoolArg("-debugnet", false))
-//        InitWarning(_("Warning: Deprecated argument -debugnet ignored, use -debug=net"));
-
     SysCfg().SetBenchMark(SysCfg().GetBoolArg("-benchmark", false));
     mempool.setSanityCheck(SysCfg().GetBoolArg("-checkmempool", RegTest()));
     Checkpoints::fEnabled = SysCfg().GetBoolArg("-checkpoints", true);
 
-
-
-//    fServer = GetBoolArg("-server", false);
-//    fLogTimestamps = GetBoolArg("-logtimestamps", true);
     setvbuf(stdout, NULL, _IOLBF, 0);
-
-
-
-
-//    if (mapArgs.count("-timeout"))
-//    {
-//        int nNewTimeout = GetArg("-timeout", 5000);
-//        if (nNewTimeout > 0 && nNewTimeout < 600000)
-//            nConnectTimeout = nNewTimeout;
-//    }
-
-    // Continue to put "/P2SH/" in the coinbase to monitor
-    // BIP16 support.
-    // This can be removed eventually...
-//    const char* pszP2SH = "/P2SH/";
-//    COINBASE_FLAGS << vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
 
     // Fee-per-kilobyte amount considered the same as "free"
     // If you are mining, be careful setting this:
@@ -586,26 +552,23 @@ bool AppInit2(boost::thread_group& threadGroup)
     // a transaction spammer can cheaply fill blocks using
     // 1-satoshi-fee transactions. It should be set above the real
     // cost to you of processing a transaction.
-    if (SysCfg().IsArgCount("-mintxfee"))
-    {
+    if (SysCfg().IsArgCount("-mintxfee")) {
         int64_t n = 0;
-        if (ParseMoney(SysCfg().GetArg("-mintxfee", ""), n) && n > 0)
+        if (ParseMoney(SysCfg().GetArg("-mintxfee", ""), n) && n > 0) {
             CTransaction::nMinTxFee = n;
-        else
+        } else {
             return InitError(strprintf(_("Invalid amount for -mintxfee=<amount>: '%s'"), SysCfg().GetArg("-mintxfee", "")));
+        }
     }
-    if (SysCfg().IsArgCount("-minrelaytxfee"))
-    {
+    if (SysCfg().IsArgCount("-minrelaytxfee")) {
         int64_t n = 0;
-        if (ParseMoney(SysCfg().GetArg("-minrelaytxfee", ""), n) && n > 0)
+        if (ParseMoney(SysCfg().GetArg("-minrelaytxfee", ""), n) && n > 0) {
             CTransaction::nMinRelayTxFee = n;
-        else
+        } else {
             return InitError(strprintf(_("Invalid amount for -minrelaytxfee=<amount>: '%s'"), SysCfg().GetArg("-minrelaytxfee", "")));
+        }
     }
-
-
-    if (SysCfg().GetTxFee() > nHighTransactionFeeWarning)
-    {
+    if (SysCfg().GetTxFee() > nHighTransactionFeeWarning) {
        InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
     }
 
@@ -616,15 +579,17 @@ bool AppInit2(boost::thread_group& threadGroup)
     // Make sure only a single Coin process is using the data directory.
     boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
-    if (file) fclose(file);
+    if (file) {
+        fclose(file);
+    }
     static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
-    if (!lock.try_lock())
+    if (!lock.try_lock()) {
         return InitError(strprintf(_("Cannot obtain a lock on data directory %s. coin Core is probably already running."), strDataDir));
+    }
 
-//    if (GetBoolArg("-shrinkdebugfile", !fDebug))
-//        ShrinkDebugFile();
+    // if (GetBoolArg("-shrinkdebugfile", !fDebug))
+    //     ShrinkDebugFile();
 
-    LogPrint("INFO","\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrint("INFO","%s version %s (%s)\n", IniCfg().GetCoinName().c_str(), FormatFullVersion().c_str(), CLIENT_DATE);
     printf("%s version %s (%s)\n", IniCfg().GetCoinName().c_str(), FormatFullVersion().c_str(), CLIENT_DATE.c_str());
     LogPrint("INFO","Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
@@ -647,7 +612,6 @@ bool AppInit2(boost::thread_group& threadGroup)
     LogPrint("INFO","Using miniupnpc version %s,API version %d\n", MINIUPNPC_VERSION, MINIUPNPC_API_VERSION);
     printf("Using miniupnpc version %s,API version %d\n", MINIUPNPC_VERSION, MINIUPNPC_API_VERSION);
 #endif
-//    if (!fLogTimestamps)
     LogPrint("INFO","Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()));
     printf("Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
     LogPrint("INFO","Default data directory %s\n", GetDefaultDataDir().string());
@@ -655,10 +619,8 @@ bool AppInit2(boost::thread_group& threadGroup)
     LogPrint("INFO","Using data directory %s\n", strDataDir);
     printf("Using data directory %s\n", strDataDir.c_str());
     LogPrint("INFO","Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
-    printf("Using at most %i connections (		%i file descriptors available)\n", nMaxConnections, nFD);
+    printf("Using at most %i connections (      %i file descriptors available)\n", nMaxConnections, nFD);
     ostringstream strErrors;
-
-
 
     int64_t nStart;
 
@@ -669,61 +631,68 @@ bool AppInit2(boost::thread_group& threadGroup)
     RegisterNodeSignals(GetNodeSignals());
 
     int nSocksVersion = SysCfg().GetArg("-socks", 5);
-    if (nSocksVersion != 4 && nSocksVersion != 5)
+    if (nSocksVersion != 4 && nSocksVersion != 5) {
         return InitError(strprintf(_("Unknown -socks proxy version requested: %i"), nSocksVersion));
+    }
 
-	if (SysCfg().IsArgCount("-onlynet")) {
-		set<enum Network> nets;
-		vector<string> tmp = SysCfg().GetMultiArgs("-onlynet");
-		for (auto& snet : tmp) {
-			enum Network net = ParseNetwork(snet);
-			if (net == NET_UNROUTABLE)
-				return InitError(strprintf(_("Unknown network specified in -onlynet: '%s'"), snet));
-			nets.insert(net);
-		}
-		for (int n = 0; n < NET_MAX; n++) {
-			enum Network net = (enum Network) n;
-			if (!nets.count(net))
-				SetLimited(net);
-		}
-	}
+    if (SysCfg().IsArgCount("-onlynet")) {
+        set<enum Network> nets;
+        vector<string> tmp = SysCfg().GetMultiArgs("-onlynet");
+        for (auto& snet : tmp) {
+            enum Network net = ParseNetwork(snet);
+            if (net == NET_UNROUTABLE) {
+                return InitError(strprintf(_("Unknown network specified in -onlynet: '%s'"), snet));
+            }
+            nets.insert(net);
+        }
+        for (int n = 0; n < NET_MAX; n++) {
+            enum Network net = (enum Network) n;
+            if (!nets.count(net)) {
+                SetLimited(net);
+            }
+        }
+    }
 
     CService addrProxy;
     bool fProxy = false;
-	if (SysCfg().IsArgCount("-proxy")) {
-		addrProxy = CService(SysCfg().GetArg("-proxy", ""), 9050);
-		if (!addrProxy.IsValid())
-			return InitError(strprintf(_("Invalid -proxy address: '%s'"), SysCfg().GetArg("-proxy", "")));
+    if (SysCfg().IsArgCount("-proxy")) {
+        addrProxy = CService(SysCfg().GetArg("-proxy", ""), 9050);
+        if (!addrProxy.IsValid()) {
+            return InitError(strprintf(_("Invalid -proxy address: '%s'"), SysCfg().GetArg("-proxy", "")));
+        }
 
-		if (!IsLimited(NET_IPV4))
-			SetProxy(NET_IPV4, addrProxy, nSocksVersion);
-		if (nSocksVersion > 4) {
-			if (!IsLimited(NET_IPV6))
-				SetProxy(NET_IPV6, addrProxy, nSocksVersion);
-			SetNameProxy(addrProxy, nSocksVersion);
-		}
-		fProxy = true;
-	}
+        if (!IsLimited(NET_IPV4)) {
+            SetProxy(NET_IPV4, addrProxy, nSocksVersion);
+        }
+        if (nSocksVersion > 4) {
+            if (!IsLimited(NET_IPV6)) {
+                SetProxy(NET_IPV6, addrProxy, nSocksVersion);
+            }
+            SetNameProxy(addrProxy, nSocksVersion);
+        }
+        fProxy = true;
+    }
 
     // -onion can override normal proxy, -noonion disables tor entirely
     // -tor here is a temporary backwards compatibility measure
-	if (SysCfg().IsArgCount("-tor"))
-		LogPrint("INFO", "Notice: option -tor has been replaced with -onion and will be removed in a later version.\n");
-	if (!(SysCfg().GetArg("-onion", "") == "0") && !(SysCfg().GetArg("-tor", "") == "0")
-			&& (fProxy || SysCfg().IsArgCount("-onion") || SysCfg().IsArgCount("-tor"))) {
-		CService addrOnion;
-		if (!SysCfg().IsArgCount("-onion") && !SysCfg().IsArgCount("-tor"))
-			addrOnion = addrProxy;
-		else
-			addrOnion =
-					SysCfg().IsArgCount("-onion") ?
-							CService(SysCfg().GetArg("-onion", ""), 9050) :
-							CService(SysCfg().GetArg("-tor", ""), 9050);
-		if (!addrOnion.IsValid())
-			return InitError(strprintf(_("Invalid -onion address: '%s'"), SysCfg().IsArgCount("-onion")?SysCfg().GetArg("-onion", ""):SysCfg().GetArg("-tor", "")));
-		SetProxy(NET_TOR, addrOnion, 5);
-		SetReachable(NET_TOR);
-	}
+    if (SysCfg().IsArgCount("-tor")) {
+        LogPrint("INFO", "Notice: option -tor has been replaced with -onion and will be removed in a later version.\n");
+    }
+    if (!(SysCfg().GetArg("-onion", "") == "0") && !(SysCfg().GetArg("-tor", "") == "0")
+            && (fProxy || SysCfg().IsArgCount("-onion") || SysCfg().IsArgCount("-tor"))) {
+        CService addrOnion;
+        if (!SysCfg().IsArgCount("-onion") && !SysCfg().IsArgCount("-tor")) {
+            addrOnion = addrProxy;
+        } else {
+            addrOnion = SysCfg().IsArgCount("-onion") ? CService(SysCfg().GetArg("-onion", ""), 9050) : CService(SysCfg().GetArg("-tor", ""), 9050);
+        }
+
+        if (!addrOnion.IsValid()) {
+            return InitError(strprintf(_("Invalid -onion address: '%s'"), SysCfg().IsArgCount("-onion") ? SysCfg().GetArg("-onion", "") : SysCfg().GetArg("-tor", "")));
+        }
+        SetProxy(NET_TOR, addrOnion, 5);
+        SetReachable(NET_TOR);
+    }
 
     // see Step 2: parameter interactions for more information about these
     fNoListen = !SysCfg().GetBoolArg("-listen", true);
@@ -732,70 +701,51 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     bool fBound = false;
     if (!fNoListen) {
-		if (SysCfg().IsArgCount("-bind")) {
-			vector<string> tmp = SysCfg().GetMultiArgs("-bind");
-			for (const auto& strBind : tmp) {
-				CService addrBind;
-				if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
-					return InitError(strprintf(_("Cannot resolve -bind address: '%s'"), strBind));
-				fBound |= Bind(addrBind, (BF_EXPLICIT | BF_REPORT_ERROR));
-			}
-		}
+        if (SysCfg().IsArgCount("-bind")) {
+            vector<string> tmp = SysCfg().GetMultiArgs("-bind");
+            for (const auto& strBind : tmp) {
+                CService addrBind;
+                if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false)) {
+                    return InitError(strprintf(_("Cannot resolve -bind address: '%s'"), strBind));
+                }
+                fBound |= Bind(addrBind, (BF_EXPLICIT | BF_REPORT_ERROR));
+            }
+        }
         else {
             struct in_addr inaddr_any;
             inaddr_any.s_addr = INADDR_ANY;
             fBound |= Bind(CService(in6addr_any, GetListenPort()), BF_NONE);
             fBound |= Bind(CService(inaddr_any, GetListenPort()), !fBound ? BF_REPORT_ERROR : BF_NONE);
         }
-        if (!fBound)
+        if (!fBound) {
             return InitError(_("Failed to listen on any port. Use -listen=0 if you want this."));
+        }
     }
 
-	if (SysCfg().IsArgCount("-externalip")) {
-		vector<string> tmp = SysCfg().GetMultiArgs("-externalip");
-		for (const auto& strAddr : tmp) {
-			CService addrLocal(strAddr, GetListenPort(), fNameLookup);
-			if (!addrLocal.IsValid())
-				return InitError(strprintf(_("Cannot resolve -externalip address: '%s'"), strAddr));
-			AddLocal(CService(strAddr, GetListenPort(), fNameLookup), LOCAL_MANUAL);
-		}
-	}
+    if (SysCfg().IsArgCount("-externalip")) {
+        vector<string> tmp = SysCfg().GetMultiArgs("-externalip");
+        for (const auto& strAddr : tmp) {
+            CService addrLocal(strAddr, GetListenPort(), fNameLookup);
+            if (!addrLocal.IsValid()) {
+                return InitError(strprintf(_("Cannot resolve -externalip address: '%s'"), strAddr));
+            }
+            AddLocal(CService(strAddr, GetListenPort(), fNameLookup), LOCAL_MANUAL);
+        }
+    }
 
-	{
-		vector<string> tmp = SysCfg().GetMultiArgs("-seednode");
-		for (auto strDest : tmp)
-			AddOneShot(strDest);
-	}
+    {
+        vector<string> tmp = SysCfg().GetMultiArgs("-seednode");
+        for (auto strDest : tmp) {
+            AddOneShot(strDest);
+        }
+    }
 
     // ********************************************************* Step 7: load block chain
-
     SysCfg().SetReIndex(SysCfg().GetBoolArg("-reindex", false) );
 
-
     filesystem::path blocksDir = GetDataDir() / "blocks";
-    if (!filesystem::exists(blocksDir))
-    {
+    if (!filesystem::exists(blocksDir)) {
         filesystem::create_directories(blocksDir);
-//        bool linked = false;
-//        for (unsigned int i = 1; i < 10000; i++) {
-//            filesystem::path source = GetDataDir() / strprintf("blk%04u.dat", i);
-//            if (!filesystem::exists(source)) break;
-//            filesystem::path dest = blocksDir / strprintf("blk%05u.dat", i-1);
-//            try {
-//                filesystem::create_hard_link(source, dest);
-//                LogPrint("INFO","Hardlinked %s -> %s\n", source.string(), dest.string());
-//                linked = true;
-//            } catch (filesystem::filesystem_error & e) {
-//                // Note: hardlink creation failing is not a disaster, it just means
-//                // blocks will get re-downloaded from peers.
-//                LogPrint("INFO","Error hardlinking blk%04u.dat : %s\n", i, e.what());
-//                break;
-//            }
-//        }
-//        if (linked)
-//        {
-//        	SysCfg().SetReIndex(true);
-//        }
     }
 
     // cache size calculations
@@ -819,20 +769,19 @@ bool AppInit2(boost::thread_group& threadGroup)
     try {
         pwalletMain = CWallet::getinstance();
         RegisterWallet(pwalletMain);
-//      DBErrors nLoadWalletRet = pwalletMain->LoadWallet(false);
         pwalletMain->LoadWallet(false);
-    	} catch (std::exception &e) {
-    		cout<< "load wallet failed:"<<  e.what() << endl;
-    	}
+    } catch (std::exception &e) {
+        cout<< "load wallet failed:"<<  e.what() << endl;
+    }
 
     //load checkpoint
     SyncData::CSyncDataDb db;
-	if (db.InitializeSyncDataDb(GetDataDir() / "syncdata")) {
-		if (!Checkpoints::LoadCheckpoint()) {
-			LogPrint("INFO", "load check point error!\n");
-			return false;
-		}
-	}
+    if (db.InitializeSyncDataDb(GetDataDir() / "syncdata")) {
+        if (!Checkpoints::LoadCheckpoint()) {
+            LogPrint("INFO", "load check point error!\n");
+            return false;
+        }
+    }
 
     bool fLoaded = false;
     while (!fLoaded) {
@@ -859,15 +808,14 @@ bool AppInit2(boost::thread_group& threadGroup)
                 pTxCacheDB = new CTransactionDB(nTxCacheSize, false, SysCfg().IsReindex());
                 pTxCacheTip = new CTransactionDBCache(*pTxCacheDB,true);
                 pScriptDB = new CScriptDB(nScriptCacheSize, false , SysCfg().IsReindex());
-//                cout <<pScriptDB->GetDbCount() <<endl;
                 pScriptDBTip = new CScriptDBViewCache(*pScriptDB,true);
 
 
                 if (SysCfg().IsReindex())
                     pblocktree->WriteReindexing(true);
 
-				mempool.SetAccountViewDB(pAccountViewTip);
-				mempool.SetScriptDBViewDB(pScriptDBTip);
+                mempool.SetAccountViewDB(pAccountViewTip);
+                mempool.SetScriptDBViewDB(pScriptDBTip);
 
                 if (!LoadBlockIndex()) {
                     strLoadError = _("Error loading block database");
@@ -892,13 +840,12 @@ bool AppInit2(boost::thread_group& threadGroup)
                     break;
                 }
 
-				if (!pTxCacheTip->LoadTransaction()) {
-					strLoadError = _("Error loading transaction cache database");
-				}
+                if (!pTxCacheTip->LoadTransaction()) {
+                    strLoadError = _("Error loading transaction cache database");
+                }
 
                 uiInterface.InitMessage(_("Verifying blocks..."));
-                if (!VerifyDB(SysCfg().GetArg("-checklevel", 3),
-                		SysCfg().GetArg("-checkblocks", 288))) {
+                if (!VerifyDB(SysCfg().GetArg("-checklevel", 3), SysCfg().GetArg("-checkblocks", 288))) {
                     strLoadError = _("Corrupted block database detected");
                     break;
                 }
@@ -921,7 +868,7 @@ bool AppInit2(boost::thread_group& threadGroup)
                     strLoadError + ".\n\n" + _("Do you want to rebuild the block database now?"),
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);
                 if (fRet) {
-                	SysCfg().SetReIndex(true);
+                    SysCfg().SetReIndex(true);
                     fRequestShutdown = false;
                 } else {
                     LogPrint("INFO","Aborted block database rebuild. Exiting.\n");
@@ -936,30 +883,23 @@ bool AppInit2(boost::thread_group& threadGroup)
     // As LoadBlockIndex can take several minutes, it's possible the user
     // requested to kill the GUI during the last operation. If so, exit.
     // As the program has not fully started yet, Shutdown() is possibly overkill.
-    if (fRequestShutdown)
-    {
+    if (fRequestShutdown) {
         LogPrint("INFO","Shutdown requested. Exiting.\n");
         return false;
     }
     LogPrint("INFO"," block index %15dms\n", GetTimeMillis() - nStart);
 
-    if (SysCfg().GetBoolArg("-printblockindex", false) || SysCfg().GetBoolArg("-printblocktree", false))
-    {
+    if (SysCfg().GetBoolArg("-printblockindex", false) || SysCfg().GetBoolArg("-printblocktree", false)) {
         PrintBlockTree();
         return false;
     }
 
-
-
-    if (SysCfg().IsArgCount("-printblock"))
-    {
+    if (SysCfg().IsArgCount("-printblock")) {
         string strMatch = SysCfg().GetArg("-printblock", "");
         int nFound = 0;
-        for (map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.begin(); mi != mapBlockIndex.end(); ++mi)
-        {
+        for (map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.begin(); mi != mapBlockIndex.end(); ++mi) {
             uint256 hash = (*mi).first;
-            if (strncmp(hash.ToString().c_str(), strMatch.c_str(), strMatch.size()) == 0)
-            {
+            if (strncmp(hash.ToString().c_str(), strMatch.c_str(), strMatch.size()) == 0) {
                 CBlockIndex* pindex = (*mi).second;
                 CBlock block;
                 ReadBlockFromDisk(block, pindex);
@@ -970,47 +910,46 @@ bool AppInit2(boost::thread_group& threadGroup)
             }
         }
         if (nFound == 0)
-            LogPrint("INFO","No blocks matching %s were found\n", strMatch);
+            LogPrint("INFO", "No blocks matching %s were found\n", strMatch);
+
         return false;
     }
-
-
 
     // ********************************************************* Step 9: import blocks
 
     // scan for better chains in the block chain database, that are not yet connected in the active best chain
     CValidationState state;
-    if (!ActivateBestChain(state))
+    if (!ActivateBestChain(state)) {
         strErrors << "Failed to connect best block";
-
+    }
     // check current chain according to checkpoint
     CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
-    if(NULL != pcheckpoint)
-    	CheckActiveChain(pcheckpoint->nHeight, pcheckpoint->GetBlockHash());
+    if (NULL != pcheckpoint)
+        CheckActiveChain(pcheckpoint->nHeight, pcheckpoint->GetBlockHash());
 
     vector<boost::filesystem::path> vImportFiles;
-    if (SysCfg().IsArgCount("-loadblock"))
-	{
-		vector<string>tmp = SysCfg().GetMultiArgs("-loadblock");
-		for(auto strFile:tmp)
-			vImportFiles.push_back(strFile);
-	}
+    if (SysCfg().IsArgCount("-loadblock")) {
+        vector<string>tmp = SysCfg().GetMultiArgs("-loadblock");
+        for (auto strFile : tmp) {
+            vImportFiles.push_back(strFile);
+        }
+    }
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
 
     // ********************************************************* Step 10: load peers
 
-    uiInterface.InitMessage(_("Loading addresses..."));
+    uiInterface.InitMessage(_("Loading peer addresses..."));
 
     nStart = GetTimeMillis();
 
     {
         CAddrDB adb;
-        if (!adb.Read(addrman))
-            LogPrint("INFO","Invalid or missing peers.dat; recreating\n");
+        if (!adb.Read(addrman)) {
+            LogPrint("INFO", "Invalid or missing peers.dat; recreating\n");
+        }
     }
 
-    LogPrint("INFO","Loaded %i addresses from peers.dat  %dms\n",
-           addrman.size(), GetTimeMillis() - nStart);
+    LogPrint("INFO", "Loaded %i addresses from peers.dat (%dms)\n", addrman.size(), GetTimeMillis() - nStart);
 
     // ********************************************************* Step 11: start node
 
@@ -1022,30 +961,27 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     RandAddSeedPerfmon();
 
-    //// debug print
-    LogPrint("INFO","mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
-    LogPrint("INFO","nBestHeight = %d\n",            chainActive.Height());
-
+    LogPrint("INFO", "mapBlockIndex.size()=%u, nBestHeight = %d\n", mapBlockIndex.size(), chainActive.Height());
 
     StartNode(threadGroup);
     // InitRPCMining is needed here so getwork/getblocktemplate in the GUI debug console works properly.
     InitRPCMining();
-	if (SysCfg().IsServer())
+    if (SysCfg().IsServer()) {
         StartRPCThreads();
-
+    }
 
     // Generate coins in the background
-	if (pwalletMain) {
-		GenerateCoinBlock(SysCfg().GetBoolArg("-gen", false), pwalletMain, SysCfg().GetArg("-genproclimit", -1));
-		pwalletMain->ResendWalletTransactions();
+    if (pwalletMain) {
+        GenerateCoinBlock(SysCfg().GetBoolArg("-genblock", false), pwalletMain, SysCfg().GetArg("-genproclimit", -1));
+        pwalletMain->ResendWalletTransactions();
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
 
-       //resend unconfirmed tx
-       threadGroup.create_thread(boost::bind(&ThreadRelayTx, pwalletMain));
-	}
+        //resend unconfirmed tx
+        threadGroup.create_thread(boost::bind(&ThreadRelayTx, pwalletMain));
+    }
     // ********************************************************* Step 12: finished
 
-    uiInterface.InitMessage("initialize end");
+    uiInterface.InitMessage("Initialization finished.");
 
     return !fRequestShutdown;
 }

@@ -508,9 +508,11 @@ bool CPubKey::VerifyCompact(const uint256 &hash, const vector<unsigned char>& vc
 bool CPubKey::IsFullyValid() const {
     if (!IsValid())
         return false;
+
     CECKey key;
     if (!key.SetPubKey(*this))
         return false;
+        
     return true;
 }
 
@@ -661,12 +663,11 @@ string CKeyID::ToAddress() const {
 	if (IsNull()) {
 		return "";
 	} else{
-	return CCoinAddress(*this).ToString();
+	    return CCoinAddress(*this).ToString();
 	}
 }
 
-CKeyID::CKeyID(const string& strAddress) :
-		uint160() {
+CKeyID::CKeyID(const string& strAddress) : uint160() {
 	if (strAddress.length() == 40) {
 		*this = uint160S(strAddress);
 	} else {

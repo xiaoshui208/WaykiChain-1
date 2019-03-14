@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2009-2014 The WaykiChain Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_DB_H
-#define BITCOIN_DB_H
+#ifndef WICC_DB_H
+#define WICC_DB_H
 
 #include "clientversion.h"
 #include "serialize.h"
@@ -23,10 +23,7 @@
 class CDiskBlockIndex;
 class COutPoint;
 
-
-
 void ThreadFlushWalletDB(const std::string& strWalletFile);
-
 
 class CDBEnv
 {
@@ -59,6 +56,7 @@ public:
     enum VerifyResult { VERIFY_OK,
                         RECOVER_OK,
                         RECOVER_FAIL };
+                        
     VerifyResult Verify(std::string strFile, bool (*recoverFunc)(CDBEnv& dbenv, std::string strFile));
     /**
      * Salvage data from a file that Verify says is bad.

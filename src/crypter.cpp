@@ -5,7 +5,6 @@
 
 #include "crypter.h"
 
-//#include "script.h"
 #include "util.h"
 #include <string>
 #include <vector>
@@ -124,10 +123,13 @@ bool DecryptSecret(const CKeyingMaterial& vMasterKey, const vector<unsigned char
 bool CCryptoKeyStore::SetCrypted()
 {
     LOCK(cs_KeyStore);
+
     if (fUseCrypto)
         return true;
-    if (IsContainMainKey())
+
+    if (HasMainKey())
         return false;
+
     fUseCrypto = true;
     return true;
 }
@@ -182,7 +184,7 @@ bool CCryptoKeyStore::AddKeyCombi(const CKeyID & keyId, const CKeyCombi &keyComb
 	 {
 		LOCK(cs_KeyStore);
 
-		if (!IsCrypted())
+		if (!IsEncrypted())
 			return CBasicKeyStore::AddKeyCombi(keyId, keyCombi);
 
 		if (IsLocked())
@@ -218,16 +220,15 @@ bool CCryptoKeyStore::AddCryptedKey(const CPubKey &vchPubKey, const vector<unsig
     return true;
 }
 
-bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut, bool IsMine) const
+bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut, bool IsMiner) const
 {
     {
         LOCK(cs_KeyStore);
 
-        if(IsMine) {
-        	 return CBasicKeyStore::GetKey(address, keyOut, IsMine);
-        }
-        else {
-			if (!IsCrypted())
+        if (IsMiner) {
+        	 return CBasicKeyStore::GetKey(address, keyOut, IsMiner);
+        } else {
+			if (!IsEncrypted())
 				return CBasicKeyStore::GetKey(address, keyOut);
 
 			CryptedKeyMap::const_iterator mi = mapCryptedKeys.find(address);
@@ -248,19 +249,18 @@ bool CCryptoKeyStore::GetKey(const CKeyID &address, CKey& keyOut, bool IsMine) c
     return false;
 }
 
-bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut, bool IsMine) const
+bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut, bool IsMiner) const
 {
     {
         LOCK(cs_KeyStore);
-        if(IsMine) {
-        	return CKeyStore::GetPubKey(address, vchPubKeyOut, IsMine);
-        }else {
-			if (!IsCrypted())
-				return CKeyStore::GetPubKey(address, vchPubKeyOut, IsMine);
+        if (IsMiner) {
+        	return CKeyStore::GetPubKey(address, vchPubKeyOut, IsMiner);
+        } else {
+			if (!IsEncrypted())
+				return CKeyStore::GetPubKey(address, vchPubKeyOut, IsMiner);
 
 			CryptedKeyMap::const_iterator mi = mapCryptedKeys.find(address);
-			if (mi != mapCryptedKeys.end())
-			{
+			if (mi != mapCryptedKeys.end()) {
 				vchPubKeyOut = (*mi).second.first;
 				return true;
 			}
@@ -272,7 +272,7 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut, bo
 bool CCryptoKeyStore::GetKeyCombi(const CKeyID & address, CKeyCombi & keyCombiOut) const
 {
 	 CBasicKeyStore::GetKeyCombi(address, keyCombiOut);
-	 if(!IsCrypted())
+	 if(!IsEncrypted())
 		 return true;
 	 CKey keyOut;
 	 if(!IsLocked()) {
@@ -287,7 +287,7 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
 {
     {
         LOCK(cs_KeyStore);
-        if (!mapCryptedKeys.empty() || IsCrypted())
+        if (!mapCryptedKeys.empty() || IsEncrypted())
             return false;
         fUseCrypto = true;
         for(auto& mKey : mapKeys)

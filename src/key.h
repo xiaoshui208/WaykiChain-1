@@ -7,17 +7,12 @@
 #ifndef COIN_KEY_H
 #define COIN_KEY_H
 
-#define WRITEDATA(s, obj)   s.write((char*)&(obj), sizeof(obj))
-#define READDATA(s, obj)    s.read((char*)&(obj), sizeof(obj))
-
-#include "allocators.h"
-
-#include "uint256.h"
-
+#include <boost/variant.hpp>
 #include <stdexcept>
 #include <vector>
+#include "allocators.h"
+#include "uint256.h"
 #include "util.h"
-#include <boost/variant.hpp>
 
 /** A reference to a CKey: the Hash160 of its serialized public key */
 class CKeyID: public uint160 {
@@ -25,15 +20,10 @@ public:
 	CKeyID() : uint160() {}
 	CKeyID(const uint160 &in) : uint160(in) {}
 	CKeyID(const string &strAddress);
-	bool IsEmpty()const
-	{
-		return IsNull();
-	}
 
-	string ToString() const
-	{
-		return HexStr(begin(),end());
-	}
+	bool IsEmpty()const { return IsNull(); }
+
+	string ToString() const { return HexStr(begin(),end()); }
 	string ToAddress() const;
 
 };
@@ -194,16 +184,16 @@ public:
 		WriteCompactSize(s, len);
 		s.write((char*) vch, len);
 	}
+
 	template<typename Stream> void Unserialize(Stream &s, int nType, int nVersion) {
+
 		unsigned int len = ReadCompactSize(s);
 		if ( len == 33 ) {
 			s.read((char*) vch, 33);
-		} else if(len == 0){
+		} else if (len == 0) {
 			Invalidate();
-		}
-		else{
-			ERRORMSG("Unserialize......");
-//	        assert(0); //never come here
+		} else {
+			ERRORMSG("Unserializable: len=%d", len);
 		}
 	}
 
@@ -278,7 +268,7 @@ public:
 			READWRITE(fValid);
 	)
 
-   string ToString()const
+    string ToString()const
 	{
 		if(fValid)
 		return HexStr(begin(),end());
@@ -286,11 +276,12 @@ public:
 	}
 
 	// Construct an invalid private key.
-	CKey() :
-			fValid(false) {
+	CKey(): fValid(false)
+	{
 		LockObject(vch);
 		fCompressed = false;
 	}
+
 	bool Clear()
 	{
 		fValid = false;
@@ -299,14 +290,15 @@ public:
 	}
 
 	// Copy constructor. This is necessary because of memlocking.
-	CKey(const CKey &secret) :
-			fValid(secret.fValid), fCompressed(secret.fCompressed) {
+	CKey(const CKey &secret): fValid(secret.fValid), fCompressed(secret.fCompressed)
+	{
 		LockObject(vch);
 		memcpy(vch, secret.vch, sizeof(vch));
 	}
 
 	// Destructor (again necessary because of memlocking).
-	~CKey() {
+	~CKey()
+	{
 		UnlockObject(vch);
 	}
 

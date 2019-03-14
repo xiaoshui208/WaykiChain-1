@@ -29,7 +29,7 @@ Object CKeyCombi::ToJsonObj()const {
     return std::move(reply);
 }
 
-bool CKeyCombi::UnSersailFromJson(const Object& obj){
+bool CKeyCombi::UnSerializeFromJson(const Object& obj){
 	try {
 		Object reply;
 		const Value& mCKey = find_value(obj, "mCkey");
@@ -47,7 +47,7 @@ bool CKeyCombi::UnSersailFromJson(const Object& obj){
 			nCreationTime =find_value(obj, "nCreationTime").get_int64();
 		}
 	} catch (...) {
-		ERRORMSG("UnSersailFromJson Failed !");
+		ERRORMSG("UnSerializeFromJson Failed !");
 		return false;
 	}
 
@@ -56,9 +56,11 @@ bool CKeyCombi::UnSersailFromJson(const Object& obj){
 
 bool CKeyCombi::CleanAll() {
 	mMainCkey.Clear();
-	mMinerCkey.Clear();
 	mMainPKey = CPubKey();
+
+	mMinerCkey.Clear();
 	mMinerPKey = CPubKey();
+	
 	nCreationTime = 0 ;
     return true;
 }
@@ -109,12 +111,12 @@ string CKeyCombi::ToString() const{
 	if(mMinerCkey.IsValid()) {
 		str += strprintf(" MinerPKey:%s MinerKey:%s",mMinerCkey.GetPubKey().ToString(), mMinerCkey.ToString());
 	}
-	 str += strprintf(" CreationTime:%d",  nCreationTime);
+	str += strprintf(" CreationTime:%d",  nCreationTime);
 	return str;
 }
 
-bool CKeyCombi::GetCKey(CKey& keyOut, bool IsMine) const {
-	if(IsMine) {
+bool CKeyCombi::GetCKey(CKey& keyOut, bool IsMiner) const {
+	if(IsMiner) {
 		keyOut = mMinerCkey;
 	} else {
 		keyOut = mMainCkey;
@@ -153,10 +155,10 @@ void CKeyCombi::SetMinerKey(CKey & minerKey)
 {
 	mMinerCkey = minerKey;
 }
-bool CKeyCombi::IsContainMinerKey() const {
+bool CKeyCombi::HasMinerKey() const {
 	return mMinerCkey.IsValid();
 }
-bool CKeyCombi::IsContainMainKey() const {
+bool CKeyCombi::HasMainKey() const {
 	return mMainCkey.IsValid();
 }
 

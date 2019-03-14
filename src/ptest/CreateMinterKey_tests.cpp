@@ -79,7 +79,7 @@ string CCreateMinerkey::GetOneAccount() {
 void CCreateMinerkey::CreateAccount() {
 //	if(2 == argc){
 //		const char* newArgv[] = {argv[0], argv[2] };
-//		CBaseParams::IntialParams(2, newArgv);
+//		CBaseParams::InitializeParams(2, newArgv);
 //	}
 	if(!SelectAccounts())
 		return;
@@ -115,10 +115,9 @@ void CCreateMinerkey::CreateAccount() {
 		} else {
 			break;
 		}
-
 	}
 
-	for(size_t i=0; i < vNewAddress.size(); i++) {
+	for (size_t i = 0; i < vNewAddress.size(); i++) {
 		int nfee = GetRandomFee();
 		Value value1 = RegisterAccountTx(vNewAddress[i], nfee);
 		BOOST_CHECK(GetHashFromCreatedTx(value1,hash));
@@ -136,10 +135,9 @@ void CCreateMinerkey::CreateAccount() {
 		} else {
 			break;
 		}
-
 	}
 
-	  cout << "all ok  "  <<  endl;
+	cout << "all ok  "  <<  endl;
 }
 
 CCreateMinerkey::~CCreateMinerkey() {

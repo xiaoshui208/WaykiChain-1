@@ -104,13 +104,13 @@ elif cmd == "getinfo":
     except:
         print "\n---An error occurred---\n"
 
-elif cmd == "getnewaddress":
+elif cmd == "getnewaddr":
     try:
         acct = raw_input("Enter an account name: ")
         try:
-            print access.getnewaddress(acct)
+            print access.getnewaddr(acct)
         except:
-            print access.getnewaddress()
+            print access.getnewaddr()
     except:
         print "\n---An error occurred---\n"
 
@@ -236,19 +236,6 @@ elif cmd == "sendfrom":
     except:
         print "\n---An error occurred---\n"
 
-elif cmd == "sendmany":
-    try:
-        frm = raw_input("From: ")
-        to = raw_input("To (in format address1:amount1,address2:amount2,...): ")
-        mc = raw_input("Minimum confirmations (optional): ")
-        comment = raw_input("Comment (optional): ")
-        try:
-            print access.sendmany(frm,to,mc,comment)
-        except:
-            print access.sendmany(frm,to)
-    except:
-        print "\n---An error occurred---\n"
-
 elif cmd == "sendtoaddress":
     try:
         to = raw_input("To (in format address1:amount1,address2:amount2,...): ")
@@ -294,10 +281,10 @@ elif cmd == "stop":
     except:
         print "\n---An error occurred---\n"
 
-elif cmd == "validateaddress":
+elif cmd == "validateaddr":
     try:
         addr = raw_input("Address: ")
-        print access.validateaddress(addr)
+        print access.validateaddr(addr)
     except:
         print "\n---An error occurred---\n"
 

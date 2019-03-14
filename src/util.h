@@ -183,12 +183,12 @@ bool TryCreateDirectory(const boost::filesystem::path& p);
 boost::filesystem::path GetDefaultDataDir();
 const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 boost::filesystem::path GetConfigFile();
+boost::filesystem::path GetAbsolutePath(const string &path);
 boost::filesystem::path GetPidFile();
 #ifndef WIN32
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
 #endif
-void ReadConfigFile(map<string, string>& mapSettingsRet,
-		map<string, vector<string> >& mapMultiSettingsRet);
+void ReadConfigFile(map<string, string>& mapSettingsRet, map<string, vector<string> >& mapMultiSettingsRet);
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
@@ -345,9 +345,11 @@ template<typename T>
 bool TimingResistantEqual(const T& a, const T& b) {
 	if (b.size() == 0)
 		return a.size() == 0;
+
 	size_t accumulator = a.size() ^ b.size();
 	for (size_t i = 0; i < a.size(); i++)
 		accumulator |= a[i] ^ b[i % b.size()];
+
 	return accumulator == 0;
 }
 
